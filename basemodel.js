@@ -25,7 +25,7 @@ export var BaseModel = angular.module('BaseModel', [])
 		this.current = function(d) {
 			if (!d) {
 
-				return currentDeferred.promisse;
+				return currentDeferred.promise;
 			}
 
 			current = d;
