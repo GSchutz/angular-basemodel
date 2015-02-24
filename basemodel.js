@@ -81,8 +81,10 @@ export var BaseModel = angular.module('BaseModel', [])
 
 				id = undefined;
 
-				if (!_.isEmpty(current))
-					id = current[$this.$primaryKey];
+				// Please, don't do this. A better approach is to define a wrapper or
+				// a $this.data({_id: "ejiauhs"}).get(), that obviously is not priority.
+				//if (!_.isEmpty(current))
+				//	id = current[$this.$primaryKey];
 			}
 
 			query = _.defaults(query, $this.$query);
