@@ -9,6 +9,8 @@ export var BaseModel = angular.module('BaseModel', [])
 		var collection = $this.$resource;
 
 		var current;
+		var currentDeferred = $q.defer();
+
 		var $data = [];
 
 		this[$this.$resource] = function(_data) {
@@ -21,10 +23,14 @@ export var BaseModel = angular.module('BaseModel', [])
 		}
 
 		this.current = function(d) {
-			if (!d)
-				return current;
+			if (!d) {
+
+				return currentDeferred.promisse;
+			}
 
 			current = d;
+
+			currentDeferred.resolve(current);
 
 			return this;
 		}
@@ -75,8 +81,8 @@ export var BaseModel = angular.module('BaseModel', [])
 
 				id = undefined;
 
-				if (!_.isEmpty(this.current()))
-					id = this.current()[$this.$primaryKey];
+				if (!_.isEmpty(current))
+					id = current[$this.$primaryKey];
 			}
 
 			query = _.defaults(query, $this.$query);
@@ -109,19 +115,6 @@ export var BaseModel = angular.module('BaseModel', [])
 						$this.current(d);
 				});
 		};
-
-		// this is a private method
-		this.thumbnail = function(vp, content) {
-			var width = 154, height = 154;
-
-			var thumbnail = '<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" '+
-				'width="'+width+
-				'" height="'+height+
-				'" viewBox="'+vp.x+' '+vp.y+' '+vp.width+' '+vp.height+'">' + 
-				content + '</svg>';
-
-			return thumbnail;
-		}
 
 		this.addSet = function(id, resource, data) {
 			// @TODO	validation
@@ -188,8 +181,8 @@ export var BaseModel = angular.module('BaseModel', [])
 			if (_.isPlainObject(id)) {
 				data = id;
 
-				if (!_.isEmpty(this.current()))
-					id = this.current()[$this.$primaryKey];
+				if (!_.isEmpty(current))
+					id = current[$this.$primaryKey];
 				else
 					deferred.reject(new TypeError("Expected two params for method 'save'."));
 			}
