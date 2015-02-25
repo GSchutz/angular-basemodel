@@ -149,6 +149,8 @@ export var BaseModel = angular.module('BaseModel', [])
 				});
 		}
 
+		this.addResource = this.addSet;
+
 		this.create = function(data) {
 			// @TODO	validation
 
@@ -190,7 +192,7 @@ export var BaseModel = angular.module('BaseModel', [])
 			}
 
 			if (_.isFunction($this.$before.$update)) {
-				var response = $this.$before.$update.call($this, data, resource);
+				var response = $this.$before.$update.call($this, data, false);
 				
 				if (response) {
 					deferred.reject(response);
