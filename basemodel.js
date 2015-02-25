@@ -20,7 +20,7 @@ export var BaseModel = angular.module('BaseModel', [])
 			$data = _data;
 
 			return this;
-		}
+		};
 
 		this.current = function(d) {
 			if (!d) {
@@ -33,7 +33,7 @@ export var BaseModel = angular.module('BaseModel', [])
 			currentDeferred.resolve(current);
 
 			return this;
-		}
+		};
 
 		/**
 		 * Short method for construct the base URL. If needed for another resource, use: url([1, 'records'], 'collection'));
@@ -147,7 +147,7 @@ export var BaseModel = angular.module('BaseModel', [])
 						$this.current($data[i]);
 					}
 				});
-		}
+		};
 
 		this.addResource = this.addSet;
 
@@ -254,7 +254,7 @@ export var BaseModel = angular.module('BaseModel', [])
 
 	this.instance = function(o) {
 
-		var o = _.defaults(o, {
+		o = _.defaults(o, {
 			$name: "Users",
 			$resource: "users",
 			$primaryKey: "_id",
@@ -320,13 +320,13 @@ export var BaseModel = angular.module('BaseModel', [])
 					type: type,
 					message: msg,
 					code: null
-				}
+				};
 			}
 		});
 
 		BaseModel.prototype = o;
 
 		return new BaseModel();
-	}
+	};
 
 }]);
