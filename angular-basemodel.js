@@ -1,4 +1,4 @@
-export var BaseModel = angular.module('BaseModel', [])
+angular.module('BaseModel', [])
 .service('BaseModel',  ["$q", '$http', '$location', '$timeout', function($q, $http, $location, $timeout) {
 	"use strict";
 
