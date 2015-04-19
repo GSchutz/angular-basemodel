@@ -22,7 +22,7 @@ angular.module('BaseModel', [])
 			return this;
 		};
 
-		this.current = function(d) {
+		this.currentPromise = function(d) {
 			if (!d) {
 
 				return currentDeferred.promise;
@@ -33,6 +33,19 @@ angular.module('BaseModel', [])
 			currentDeferred.resolve(current);
 
 			return this;
+		};
+
+		this.current = function(d) {
+			if (!d) {
+
+				return current;
+			} else {
+				current = d;
+
+				this.currentPromise(d);
+
+				return this;
+			}
 		};
 
 		/**
@@ -75,18 +88,57 @@ angular.module('BaseModel', [])
 
 		}
 
-		this.get = function(id, query) {
-			if (_.isPlainObject(id)) {
-				query = id;
+		var swto = [];
 
-				id = undefined;
+		this.throttle = function(fn, time, namespace) {
+			namespace = namespace || 'global';
 
-				// Please, don't do this. A better approach is to define a wrapper or
-				// a $this.data({_id: "ejiauhs"}).get(), that obviously is not priority.
-				//if (!_.isEmpty(current))
-				//	id = current[$this.$primaryKey];
+			if (!swto[namespace])
+				swto.push(namespace);
+
+	    $timeout.cancel(swto[namespace]);
+
+	    //var deferred = $q.defer();
+
+	    swto[namespace] = $timeout(function() {
+	    	fn.call($this);
+	    }, time || 1000);
+
+	    return this;
+		};
+
+		this.getOf = function(resource, value, query) {
+
+			query = _.defaults(query, $this.$query);
+
+			var config = {
+				params: query
+			};
+
+			var deferred = $q.defer();
+
+			if (_.isFunction($this.$before.$read)) {
+				var response = $this.$before.$read.call($this);
+
+				if (response) {
+					deferred.reject(response);
+					return deferred.promise;
+				}
 			}
 
+			return $http.get(url(resource, value), config)
+				.success(function(d) {
+					// after `read` we dispatch our events
+					$this.$after.$read.call($this, d);
+
+					if (_.isArray(d))
+						$this[$this.$resource](d);
+					else
+						$this.current(d);
+				});
+		};
+
+		this.getBy = function(field, value, query) {
 			query = _.defaults(query, $this.$query);
 
 			var config = {
@@ -102,20 +154,50 @@ angular.module('BaseModel', [])
 
 				if (response) {
 					deferred.reject(response);
-					return deferred.promisse;
+					return deferred.promise;
 				}
 			}
 
-			return $http.get(url(id || ''), config)
+			var url = field ? url(field, value) : ((value == undefined) ? url() : url(value));
+
+			return $http.get(url, config)
 				.success(function(d) {
 					// after `read` we dispatch our events
 					$this.$after.$read.call($this, d);
 
-					if (_.isArray(d))
+					if (_.isArray(d)) {
 						$this[$this.$resource](d);
-					else
+					} else {
 						$this.current(d);
+
+						var k = _.findIndex($data, {_id: d._id});
+
+						if (k > -1)
+							$data[k] = d;
+						else
+							$data.push(d);
+					}
 				});
+		};
+
+		this.get = function(id, query) {
+			return this.getBy(undefined, id, query);
+		};
+
+		this.getSet = function(id, resource, setId) {
+			var deferred = $q.defer();
+
+			var res = _.find(current[resource], {_id: setId});
+
+			if (res) {
+				deferred.resolve(res);
+			} else {
+				$http.get( url(id, resource, setId) ).success(function(d){
+					deferred.resolve(d);
+				});
+			}
+
+			return deferred.promise;
 		};
 
 		this.addSet = function(id, resource, data) {
@@ -128,7 +210,7 @@ angular.module('BaseModel', [])
 				
 				if (response) {
 					deferred.reject(response);
-					return deferred.promisse;
+					return deferred.promise;
 				}
 			}
 
@@ -143,13 +225,110 @@ angular.module('BaseModel', [])
 					var i = _($data).findIndex(g);
 
 					if (i > -1) {
-						$data[i] = d;
-						$this.current($data[i]);
+						$data[i][resource].push(d);
+
+						//current[resource].push(d);
 					}
 				});
 		};
 
 		this.addResource = this.addSet;
+
+		this.updateSet = function(id, resource, resId, data) {
+			// @TODO	validation
+
+			var deferred = $q.defer();
+
+			if (_.isFunction($this.$before.$update)) {
+				var response = $this.$before.$update.call($this, data, resource, resId);
+				
+				if (response) {
+					deferred.reject(response);
+					return deferred.promise;
+				}
+			}
+
+			return $http.put(url(id, resource, resId), data)
+				.success(function(d) {
+					// after `update` we dispatch our events
+					$this.$after.$update.call($this, d, resource, resId);
+
+					var g = {};
+					g[$this.$primaryKey] = id;
+
+					var i = _($data).findIndex(g);
+
+					if (i > -1) {
+						var r = {};
+						r[$this.$primaryKey] = resId;
+						var k = _($data[i][resource]).findIndex(r);
+
+						if (k > -1 )
+							$data[i][resource][k] = d;
+					}
+				});
+		};
+
+		this.deleteSet = function(id, resource, resId) {
+			// @TODO	validation
+
+			var deferred = $q.defer();
+
+			if (_.isFunction($this.$before.$delete)) {
+				var response = $this.$before.$delete.call($this, resource, resId);
+				
+				if (response) {
+					deferred.reject(response);
+					return deferred.promise;
+				}
+			}
+
+			if (_.isArray(resId)) {
+				resId = resId.join(',');
+			}
+
+
+			// TODO  Confirm the action, this will erase 'x' data from 'a'..
+
+			return $http.delete(url(id, resource, resId))
+				.success(function(d) {
+					// after `delete` we dispatch our events
+					$this.$after.$delete.call($this, d, resource, resId);
+
+					var g = {};
+					g[$this.$primaryKey] = id;
+
+					var i = _($data).findIndex(g);
+
+					if (i > -1) {
+						var r = {};
+
+						if (_.isArray(resId)) {
+							_.each(resId, function(_rid) {
+								r[$this.$primaryKey] = _rid;
+								var k = _($data[i][resource]).findIndex(r);
+
+								if (k > -1) {
+									$data[i][resource].splice(k, 1);
+								}
+							});
+
+						} else {
+							r[$this.$primaryKey] = resId;
+							var k = _($data[i][resource]).findIndex(r);
+							
+							if (k > -1) {
+								$data[i][resource].splice(k, 1);
+							}
+						}
+
+						// $data[i] = d;
+						// $this.current($data[i]);
+					}
+				});
+		};
+
+		this.updateResource = this.updateSet;
 
 		this.create = function(data) {
 			// @TODO	validation
@@ -161,7 +340,7 @@ angular.module('BaseModel', [])
 				
 				if (response) {
 					deferred.reject(response);
-					return deferred.promisse;
+					return deferred.promise;
 				}
 			}
 
@@ -196,7 +375,7 @@ angular.module('BaseModel', [])
 				
 				if (response) {
 					deferred.reject(response);
-					return deferred.promisse;
+					return deferred.promise;
 				}
 			}
 
@@ -222,7 +401,7 @@ angular.module('BaseModel', [])
 
 			if (!id) {
 				deferred.reject(new TypeError("Expected one params for method 'delete'."));
-				return deferred.promisse;
+				return deferred.promise;
 			}
 
 			if (_.isFunction($this.$before.$delete)) {
@@ -230,7 +409,7 @@ angular.module('BaseModel', [])
 				
 				if (response) {
 					deferred.reject(response);
-					return deferred.promisse;
+					return deferred.promise;
 				}
 			}
 
