@@ -158,9 +158,9 @@ angular.module('BaseModel', [])
 				}
 			}
 
-			var url = field ? url(field, value) : ((value == undefined) ? url() : url(value));
+			var u = field ? url(field, value) : ((value == undefined) ? url() : url(value));
 
-			return $http.get(url, config)
+			return $http.get(u, config)
 				.success(function(d) {
 					// after `read` we dispatch our events
 					$this.$after.$read.call($this, d);
