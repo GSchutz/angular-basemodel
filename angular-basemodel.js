@@ -112,7 +112,8 @@ angular.module('BaseModel', [])
 			query = _.defaults(query, $this.$query);
 
 			var config = {
-				params: query
+				params: query,
+				headers: $this.$headers()
 			};
 
 			var deferred = $q.defer();
@@ -142,7 +143,8 @@ angular.module('BaseModel', [])
 			query = _.defaults(query, $this.$query);
 
 			var config = {
-				params: query
+				params: query,
+				headers: $this.$headers()
 			};
 
 			// @TODO	validation
@@ -187,12 +189,16 @@ angular.module('BaseModel', [])
 		this.getSet = function(id, resource, setId) {
 			var deferred = $q.defer();
 
+			var config = {
+				headers: $this.$headers()
+			};
+
 			var res = _.find(current[resource], {_id: setId});
 
 			if (res) {
 				deferred.resolve(res);
 			} else {
-				$http.get( url(id, resource, setId) ).success(function(d){
+				$http.get( url(id, resource, setId), config ).success(function(d){
 					deferred.resolve(d);
 				});
 			}
@@ -205,6 +211,10 @@ angular.module('BaseModel', [])
 
 			var deferred = $q.defer();
 
+			var config = {
+				headers: $this.$headers()
+			};
+
 			if (_.isFunction($this.$before.$create)) {
 				var response = $this.$before.$create.call($this, data, resource);
 				
@@ -214,7 +224,7 @@ angular.module('BaseModel', [])
 				}
 			}
 
-			return $http.post(url(id, resource), data)
+			return $http.post(url(id, resource), data, config)
 				.success(function(d) {
 					// after `create` we dispatch our events
 					$this.$after.$create.call($this, d, resource);
@@ -239,6 +249,10 @@ angular.module('BaseModel', [])
 
 			var deferred = $q.defer();
 
+			var config = {
+				headers: $this.$headers()
+			};
+
 			if (_.isFunction($this.$before.$update)) {
 				var response = $this.$before.$update.call($this, data, resource, resId);
 				
@@ -248,7 +262,7 @@ angular.module('BaseModel', [])
 				}
 			}
 
-			return $http.put(url(id, resource, resId), data)
+			return $http.put(url(id, resource, resId), data, config)
 				.success(function(d) {
 					// after `update` we dispatch our events
 					$this.$after.$update.call($this, d, resource, resId);
@@ -274,6 +288,10 @@ angular.module('BaseModel', [])
 
 			var deferred = $q.defer();
 
+			var config = {
+				headers: $this.$headers()
+			};
+
 			if (_.isFunction($this.$before.$delete)) {
 				var response = $this.$before.$delete.call($this, resource, resId);
 				
@@ -290,7 +308,7 @@ angular.module('BaseModel', [])
 
 			// TODO  Confirm the action, this will erase 'x' data from 'a'..
 
-			return $http.delete(url(id, resource, resId))
+			return $http.delete(url(id, resource, resId), config)
 				.success(function(d) {
 					// after `delete` we dispatch our events
 					$this.$after.$delete.call($this, d, resource, resId);
@@ -335,6 +353,10 @@ angular.module('BaseModel', [])
 
 			var deferred = $q.defer();
 
+			var config = {
+				headers: $this.$headers()
+			};
+
 			if (_.isFunction($this.$before.$create)) {
 				var response = $this.$before.$create.call($this, data, false);
 				
@@ -344,7 +366,7 @@ angular.module('BaseModel', [])
 				}
 			}
 
-			return $http.post(url(), data)
+			return $http.post(url(), data, config)
 				.success(function(d){
 					// after `create` we dispatch our events
 					$this.$after.$create.call($this, d, false);
@@ -360,6 +382,10 @@ angular.module('BaseModel', [])
 
 		this.save = function(id, data) {
 			var deferred = $q.defer();
+
+			var config = {
+				headers: $this.$headers()
+			};
 
 			if (_.isPlainObject(id)) {
 				data = id;
@@ -379,7 +405,7 @@ angular.module('BaseModel', [])
 				}
 			}
 
-			return $http.put(url(id), data)
+			return $http.put(url(id), data, config)
 				.success(function(d) {
 					// after `update` we dispatch our events
 					$this.$after.$update.call($this, d, false);
@@ -399,6 +425,10 @@ angular.module('BaseModel', [])
 		this.delete = function(id) {
 			var deferred = $q.defer();
 
+			var config = {
+				headers: $this.$headers()
+			};
+
 			if (!id) {
 				deferred.reject(new TypeError("Expected one params for method 'delete'."));
 				return deferred.promise;
@@ -413,7 +443,7 @@ angular.module('BaseModel', [])
 				}
 			}
 
-			return $http.delete(url(id))
+			return $http.delete(url(id), config)
 				.success(function(d) {
 					// after `update` we dispatch our events
 					$this.$after.$delete.call($this, d);
@@ -462,6 +492,9 @@ angular.module('BaseModel', [])
 				},
 				$delete: {
 				}
+			},
+			$headers: function() {
+				return {};
 			},
 			$after: {
 				$read: function(){
