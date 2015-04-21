@@ -235,10 +235,8 @@ angular.module('BaseModel', [])
 
 					var i = _($data).findIndex(g);
 
-					if (i > -1) {
+					if (i > -1 && $data[i] && $data[i][resource]) {
 						$data[i][resource].push(d);
-
-						//current[resource].push(d);
 					}
 				});
 		};
@@ -276,10 +274,13 @@ angular.module('BaseModel', [])
 					if (i > -1) {
 						var r = {};
 						r[$this.$primaryKey] = resId;
-						var k = _($data[i][resource]).findIndex(r);
 
-						if (k > -1 )
-							$data[i][resource][k] = d;
+						if ($data[i] && $data[i][resource]) {
+							var k = _($data[i][resource]).findIndex(r);
+
+							if (k > -1 )
+								$data[i][resource][k] = d;
+						}
 					}
 				});
 		};
@@ -325,19 +326,25 @@ angular.module('BaseModel', [])
 						if (_.isArray(resId)) {
 							_.each(resId, function(_rid) {
 								r[$this.$primaryKey] = _rid;
-								var k = _($data[i][resource]).findIndex(r);
 
-								if (k > -1) {
-									$data[i][resource].splice(k, 1);
+								if ($data[i] && $data[i][resource]) {
+									var k = _($data[i][resource]).findIndex(r);
+
+									if (k > -1) {
+										$data[i][resource].splice(k, 1);
+									}
 								}
 							});
 
 						} else {
 							r[$this.$primaryKey] = resId;
-							var k = _($data[i][resource]).findIndex(r);
-							
-							if (k > -1) {
-								$data[i][resource].splice(k, 1);
+
+							if ($data[i] && $data[i][resource]) {
+								var k = _($data[i][resource]).findIndex(r);
+								
+								if (k > -1) {
+									$data[i][resource].splice(k, 1);
+								}
 							}
 						}
 
