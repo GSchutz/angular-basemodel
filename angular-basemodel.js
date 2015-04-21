@@ -199,7 +199,7 @@ angular.module('BaseModel', [])
 				deferred.resolve(res);
 			} else {
 				var u = setId ? url(id, resource, setId) : url(id, resource);
-				return $http.get( , config ).success(function(d){
+				return $http.get( u, config ).success(function(d){
 					// deferred.resolve(d);
 				});
 			}
