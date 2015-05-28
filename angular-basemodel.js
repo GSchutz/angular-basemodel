@@ -236,7 +236,11 @@ angular.module('BaseModel', [])
 					var i = _($data).findIndex(g);
 
 					if (i > -1 && $data[i] && $data[i][resource]) {
-						$data[i][resource].push(d);
+						if (_.isArray(d)) {
+							$data[i][resource].push.apply($data[i][resource], d);
+						} else {
+							$data[i][resource].push(d);
+						}
 					}
 				});
 		};
